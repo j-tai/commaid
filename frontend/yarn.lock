@@ -252,6 +252,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fontsource-variable/rubik@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "@fontsource-variable/rubik@npm:5.1.0"
+  checksum: 10c0/73f6aba23714e9dcb6942ac295e7a62210256f696dd5a56aa0a18969c29438c7aa3f54b79ec02ac651ad075d1f552ee482995fc367e8d27244cbcd01a5b13cf4
+  languageName: node
+  linkType: hard
+
 "@humanfs/core@npm:^0.19.0":
   version: 0.19.0
   resolution: "@humanfs/core@npm:0.19.0"
@@ -343,6 +350,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@jtai/commaid@workspace:."
   dependencies:
+    "@fontsource-variable/rubik": "npm:^5.1.0"
     "@sveltejs/adapter-static": "npm:^3.0.5"
     "@sveltejs/kit": "npm:^2.0.0"
     "@sveltejs/vite-plugin-svelte": "npm:^4.0.0-next.6"

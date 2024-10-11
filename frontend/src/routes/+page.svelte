@@ -1,2 +1,6 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<svelte:head>
+    <title>ComMaid</title>
+</svelte:head>
+
+<!-- svelte-ignore a11y_autofocus -->
+<textarea spellcheck="false" placeholder="Start typing here..." autofocus></textarea>

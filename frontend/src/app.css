@@ -1,0 +1,34 @@
+:root {
+    --fg: #e1e2ea;
+    --bg: #19191c;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --fg: #19191c;
+        --bg: #e1e2ea;
+    }
+}
+
+html,
+body {
+    margin: 0;
+    height: 100%;
+    background: var(--fg);
+    color: var(--bg);
+}
+
+textarea {
+    padding: 0.3em;
+    border: 0;
+    margin: 0;
+    outline: 0;
+    resize: none;
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    background: unset;
+    color: unset;
+    font-size: 8svmin;
+    font-family: 'Rubik Variable', sans-serif;
+}
