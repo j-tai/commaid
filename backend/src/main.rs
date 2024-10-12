@@ -3,6 +3,7 @@ use std::path::Path;
 
 use axum::routing::get_service;
 use axum::Router;
+use tempfile::TempDir;
 use tokio::net::TcpListener;
 use tower_http::services::{ServeDir, ServeFile};
 use tracing::{debug, info, trace};
@@ -26,8 +27,13 @@ async fn main() {
         .init();
     trace!("Logging set up.");
 
-    let index_path = Path::new(BUILD_PATH).join("index.html");
-    let app_path = Path::new(BUILD_PATH).join("_app");
+    // Unpack frontend files
+    let temp_dir = TempDir::new().unwrap();
+    debug!("Temporary directory is {:?}.", temp_dir.path());
+    let build = unpack_frontend(temp_dir.path());
+
+    let index_path = build.join("index.html");
+    let app_path = build.join("_app");
     let app = Router::new()
         .route("/", get_service(ServeFile::new(index_path)))
         .nest_service("/_app", ServeDir::new(app_path));
@@ -40,8 +46,21 @@ async fn main() {
         .unwrap();
 }
 
-const BUILD_PATH: &str = if cfg!(debug_assertions) {
-    "../frontend/build"
-} else {
-    "frontend/build"
-};
+fn unpack_frontend(dir: &Path) -> &Path {
+    #[cfg(debug_assertions)]
+    {
+        let _ = dir;
+        Path::new(BUILD_PATH)
+    }
+    #[cfg(not(debug_assertions))]
+    {
+        BUILD_DIR.extract(dir).unwrap();
+        dir
+    }
+}
+
+#[cfg(debug_assertions)]
+const BUILD_PATH: &str = "../frontend/build";
+#[cfg(not(debug_assertions))]
+const BUILD_DIR: include_dir::Dir =
+    include_dir::include_dir!("$CARGO_MANIFEST_DIR/../frontend/build");
