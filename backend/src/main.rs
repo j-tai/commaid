@@ -1,3 +1,5 @@
+mod server;
+
 use std::net::SocketAddr;
 use std::path::Path;
 
@@ -42,6 +44,7 @@ async fn main() {
     info!("Starting server on {address}.");
     debug!("\n\n\thttp://localhost:{}\n", address.port());
     axum::serve(TcpListener::bind(address).await.unwrap(), app)
+        .with_graceful_shutdown(server::shutdown_signal())
         .await
         .unwrap();
 }
