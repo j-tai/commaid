@@ -1,9 +1,13 @@
 /* crude css reset */
-* {
+*,
+a:visited {
     margin: 0;
     border: 0;
     outline: 0;
+    color: unset;
+    background: unset;
     font-family: unset;
+    text-decoration: unset;
     box-sizing: border-box;
 }
 
@@ -47,6 +51,11 @@ body {
     padding: 0.3em;
     text-align: center;
     font-weight: bold;
+}
+
+a,
+button {
+    text-decoration: underline;
 }
 
 .state-none {

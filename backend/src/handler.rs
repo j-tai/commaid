@@ -6,6 +6,7 @@ use std::sync::Arc;
 use async_broadcast::RecvError;
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{ConnectInfo, Query, State, WebSocketUpgrade};
+use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde::Deserialize;
 use tracing::{debug, info, instrument, warn};
@@ -22,10 +23,14 @@ pub async fn handle(
     info: ConnectInfo<SocketAddr>,
     form: Query<HandleParams>,
     upgrade: WebSocketUpgrade,
-) -> impl IntoResponse {
-    // TODO: validate room name
+) -> Result<impl IntoResponse, StatusCode> {
     let room_name = form.0.room;
-    upgrade.on_upgrade(move |socket| websocket(info.ip(), socket, rooms.0, room_name))
+    // Validate room name
+    if !matches!(room_name.len(), 6..=16) || !room_name.chars().all(|c| c.is_ascii_alphanumeric()) {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+
+    Ok(upgrade.on_upgrade(move |socket| websocket(info.ip(), socket, rooms.0, room_name)))
 }
 
 #[instrument(skip_all, fields(ip = %ip, room = room_name))]

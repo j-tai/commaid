@@ -1,11 +1,13 @@
 <script lang="ts">
     import { page } from '$app/stores';
+    import { generateRoom } from '$lib/room';
     import { Socket, SocketState } from '../lib/websocket.svelte';
 
     let text = $state('');
 
     let roomName = $derived($page.url.hash.replace(/^#/, ''));
     let socket = $state<Socket | null>(null);
+    let disabled = $derived(socket?.state === SocketState.Connecting);
 
     function connect() {
         if (roomName) {
@@ -44,22 +46,22 @@
         class:state-error={socket?.state === SocketState.Error}
     >
         {#if socket === null}
-            You are not in a room.
+            You are not in a room. <a href="#{generateRoom()}">Create one?</a>
         {:else if socket.state === SocketState.Connecting}
             Connecting...
         {:else if socket.state === SocketState.Open}
-            Connected.
+            Connected. Share the URL to invite others to the room.
         {:else if socket.state === SocketState.Error}
-            Connection error.
+            Connection error. <button onclick={() => socket?.reconnect()}>Reconnect?</button>
         {/if}
     </p>
     <!-- svelte-ignore a11y_autofocus -->
     <textarea
         spellcheck="false"
-        placeholder="Start typing here..."
+        placeholder={disabled ? '' : 'Start typing here...'}
         autofocus
         bind:value={text}
-        disabled={socket?.state === SocketState.Connecting}
+        {disabled}
         oninput={onEdit}
     ></textarea>
 </div>
