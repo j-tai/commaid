@@ -1,6 +1,5 @@
 <script lang="ts">
     import { page } from '$app/stores';
-    import { untrack } from 'svelte';
     import { Socket, SocketState } from '../lib/websocket.svelte';
 
     let text = $state('');
@@ -19,16 +18,17 @@
         }
     }
 
+    function onEdit() {
+        // If the socket is open, send the text whenever the user changes it
+        // (but not when we merely receive a change from the server)
+        if (socket?.state === SocketState.Open) {
+            socket.send(text);
+        }
+    }
+
     $effect(() => {
         // Connect when the room name changes
         connect();
-
-        // If the socket is open, send the text whenever it changes
-        $effect(() => {
-            if (socket?.state === SocketState.Open) {
-                socket.send(text);
-            }
-        });
     });
 </script>
 
@@ -60,5 +60,6 @@
         autofocus
         bind:value={text}
         disabled={socket?.state === SocketState.Connecting}
+        oninput={onEdit}
     ></textarea>
 </div>
