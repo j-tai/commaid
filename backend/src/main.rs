@@ -1,10 +1,14 @@
+mod daemon;
+mod handler;
+mod room;
 mod server;
 
 use std::net::SocketAddr;
 use std::path::Path;
 
-use axum::routing::get_service;
+use axum::routing::{get, get_service};
 use axum::Router;
+use room::Rooms;
 use tempfile::TempDir;
 use tokio::net::TcpListener;
 use tower_http::services::{ServeDir, ServeFile};
@@ -34,19 +38,29 @@ async fn main() {
     debug!("Temporary directory is {:?}.", temp_dir.path());
     let build = unpack_frontend(temp_dir.path());
 
+    // Start cleanup daemon
+    let rooms = Rooms::default();
+    let rooms2 = rooms.clone();
+    tokio::spawn(daemon::cleanup(rooms2));
+
     let index_path = build.join("index.html");
     let app_path = build.join("_app");
     let app = Router::new()
-        .route("/", get_service(ServeFile::new(index_path)))
-        .nest_service("/_app", ServeDir::new(app_path));
+        .route("/", get_service(ServeFile::new(&index_path)))
+        .route("/connect", get(handler::handle))
+        .nest_service("/_app", ServeDir::new(app_path))
+        .with_state(rooms);
 
     let address: SocketAddr = "127.0.0.1:6033".parse().unwrap();
     info!("Starting server on {address}.");
     debug!("\n\n\thttp://localhost:{}\n", address.port());
-    axum::serve(TcpListener::bind(address).await.unwrap(), app)
-        .with_graceful_shutdown(server::shutdown_signal())
-        .await
-        .unwrap();
+    axum::serve(
+        TcpListener::bind(address).await.unwrap(),
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .with_graceful_shutdown(server::shutdown_signal())
+    .await
+    .unwrap();
 }
 
 fn unpack_frontend(dir: &Path) -> &Path {

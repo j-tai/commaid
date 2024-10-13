@@ -1,34 +1,75 @@
+/* crude css reset */
+* {
+    margin: 0;
+    border: 0;
+    outline: 0;
+    font-family: unset;
+    box-sizing: border-box;
+}
+
 :root {
-    --fg: #e1e2ea;
-    --bg: #19191c;
+    --fg: #19191c;
+    --bg: #e1e2ea;
+    --bg-info: #c0c1c8;
+    --bg-success: #7efcb7;
+    --bg-warning: #ebfc7e;
+    --bg-error: #db6b6b;
 }
 
 @media (prefers-color-scheme: dark) {
     :root {
-        --fg: #19191c;
-        --bg: #e1e2ea;
+        --fg: #e1e2ea;
+        --bg: #19191c;
+        --bg-info: #3a3a3d;
+        --bg-success: #007c57;
+        --bg-warning: #6a6e02;
+        --bg-error: #960101;
     }
 }
 
 html,
 body {
-    margin: 0;
     height: 100%;
-    background: var(--fg);
-    color: var(--bg);
+    background: var(--bg);
+    color: var(--fg);
+    font-family: 'Rubik Variable', sans-serif;
+}
+
+.container {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.container p {
+    flex: none;
+    padding: 0.3em;
+    text-align: center;
+    font-weight: bold;
+}
+
+.state-none {
+    background: var(--bg-info);
+}
+
+.state-connecting {
+    background: var(--bg-warning);
+}
+
+.state-open {
+    background: var(--bg-success);
+}
+
+.state-error {
+    background: var(--bg-error);
 }
 
 textarea {
-    padding: 0.3em;
-    border: 0;
-    margin: 0;
-    outline: 0;
+    flex: 1 1;
     resize: none;
-    box-sizing: border-box;
-    height: 100%;
-    width: 100%;
+    padding: 0.3em;
     background: unset;
     color: unset;
     font-size: 8svmin;
-    font-family: 'Rubik Variable', sans-serif;
 }

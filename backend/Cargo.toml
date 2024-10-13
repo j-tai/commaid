@@ -4,9 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+async-broadcast = "0.7.1"
 async-signal = "0.2.10"
-axum = "0.7.7"
+axum = { version = "0.7.7", features = ["ws"] }
 include_dir = "0.7.4"
+serde = { version = "1.0.210", features = ["derive"] }
 tempfile = "3.13.0"
 tokio = { version = "1.40.0", features = ["full"] }
 tokio-stream = "0.1.16"
