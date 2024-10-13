@@ -33,10 +33,16 @@ impl Rooms {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Status {
+    pub text: Arc<str>,
+    pub updated_by: u64,
+}
+
 pub struct Room {
-    sender: Sender<Arc<str>>,
-    receiver: InactiveReceiver<Arc<str>>,
-    last_message: Arc<str>,
+    sender: Sender<Status>,
+    receiver: InactiveReceiver<Status>,
+    last_status: Status,
     updated: Instant,
 }
 
@@ -47,7 +53,7 @@ impl Room {
         Room {
             sender,
             receiver: receiver.deactivate(),
-            last_message: "".into(),
+            last_status: Status::default(),
             updated: Instant::now(),
         }
     }
@@ -56,15 +62,14 @@ impl Room {
         self.sender.receiver_count() == 0 || self.updated.elapsed() > ROOM_DURATION
     }
 
-    pub async fn write(&mut self, message: impl Into<Arc<str>>) {
-        let message = message.into();
-        self.sender.broadcast_direct(message.clone()).await.unwrap();
-        self.last_message = message;
+    pub async fn write(&mut self, status: Status) {
+        self.sender.broadcast_direct(status.clone()).await.unwrap();
+        self.last_status = status;
         self.updated = Instant::now();
     }
 
-    pub fn subscribe(&self) -> (Receiver<Arc<str>>, Arc<str>) {
-        (self.receiver.activate_cloned(), self.last_message.clone())
+    pub fn subscribe(&self) -> (Receiver<Status>, Status) {
+        (self.receiver.activate_cloned(), self.last_status.clone())
     }
 }
 
