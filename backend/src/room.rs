@@ -35,8 +35,20 @@ impl Rooms {
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Status {
+    pub sequence: i16,
     pub text: Arc<str>,
-    pub updated_by: u64,
+}
+
+impl PartialOrd for Status {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Status {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.sequence.wrapping_sub(other.sequence).cmp(&0)
+    }
 }
 
 pub struct Room {
@@ -62,10 +74,15 @@ impl Room {
         self.sender.receiver_count() == 0 || self.updated.elapsed() > ROOM_DURATION
     }
 
-    pub async fn write(&mut self, status: Status) {
-        self.sender.broadcast_direct(status.clone()).await.unwrap();
-        self.last_status = status;
+    pub async fn write(&mut self, text: impl Into<Arc<str>>) -> Status {
+        self.last_status.sequence = self.last_status.sequence.wrapping_add(1);
+        self.last_status.text = text.into();
+        self.sender
+            .broadcast_direct(self.last_status.clone())
+            .await
+            .unwrap();
         self.updated = Instant::now();
+        self.last_status.clone()
     }
 
     pub fn subscribe(&self) -> (Receiver<Status>, Status) {

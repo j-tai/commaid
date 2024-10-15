@@ -1,7 +1,5 @@
 use std::error::Error;
 use std::net::{IpAddr, SocketAddr};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
 
 use async_broadcast::RecvError;
 use axum::extract::ws::{Message, WebSocket};
@@ -9,9 +7,9 @@ use axum::extract::{ConnectInfo, Query, State, WebSocketUpgrade};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde::Deserialize;
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, info, instrument, trace, warn};
 
-use crate::room::{Rooms, Status};
+use crate::room::Rooms;
 
 #[derive(Deserialize)]
 pub struct HandleParams {
@@ -49,7 +47,6 @@ async fn try_websocket(
 ) -> Result<(), Box<dyn Error>> {
     let room = rooms.get(room_name).await;
     let (mut receiver, initial_status) = room.lock().await.subscribe();
-    let client_id = CLIENT_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
     // What the client currently sees
     let mut current = initial_status;
@@ -60,18 +57,16 @@ async fn try_websocket(
     loop {
         tokio::select! {
             // Receive update
-            text = receiver.recv_direct() => {
-                let new_status = match text {
-                    Ok(text) => text,
+            new_status = receiver.recv_direct() => {
+                let new_status = match new_status {
+                    Ok(s) => s,
                     Err(RecvError::Overflowed(_)) => continue,
                     Err(e) => return Err(e.into()),
                 };
-                if current != new_status {
+                if new_status > current {
+                    trace!("Updating status, seq {} -> {}.", current.sequence, new_status.sequence);
                     current = new_status;
-                    // Don't send back the user's own changes
-                    if current.updated_by != client_id {
-                        socket.send(Message::Text(current.text.to_string())).await?;
-                    }
+                    socket.send(Message::Text(current.text.to_string())).await?;
                 }
             }
             // User typed something
@@ -81,14 +76,11 @@ async fn try_websocket(
                     return Ok(()); // client closed connection
                 };
                 if let Message::Text(text) = message? {
-                    let new_status = Status { text: Arc::from(&text[..]), updated_by: client_id };
-                    let mut room = room.lock().await;
-                    current = new_status.clone();
-                    room.write(new_status).await;
+                    let new_status = room.lock().await.write(text).await;
+                    assert!(new_status > current);
+                    current = new_status;
                 }
             }
         }
     }
 }
-
-static CLIENT_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
