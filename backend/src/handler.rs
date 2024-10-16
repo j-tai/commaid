@@ -55,22 +55,18 @@ async fn try_websocket(
 
     // What the client currently sees
     let mut current = initial_status;
-    socket
-        .send(Message::Text(current.encode(&Status::default())))
-        .await?;
+    if let Some(message) = current.diff(&Status::default()) {
+        socket.send(Message::Text(message)).await?;
+    }
 
     loop {
-        tokio::select! {
+        let new_status = tokio::select! {
             // Received update
             result = receiver.recv_direct() => {
-                let new_status = match result {
+                match result {
                     Ok(new_status) => new_status,
                     Err(RecvError::Overflowed(_)) => continue,
                     Err(e) => return Err(e.into()),
-                };
-                if new_status > current {
-                    socket.send(Message::Text(new_status.encode(&current))).await?;
-                    current = new_status;
                 }
             }
             // User typed something
@@ -82,9 +78,17 @@ async fn try_websocket(
                 let Message::Text(text) = message? else {
                     continue;
                 };
-                current = room.lock().await.write(text).await;
-                continue;
+                let text: Arc<str> = Arc::from(text);
+                current.text = text.clone();
+                room.lock().await.write(text).await
             }
+        };
+
+        if new_status > current {
+            if let Some(message) = new_status.diff(&current) {
+                socket.send(Message::Text(message)).await?;
+            }
+            current = new_status;
         }
     }
 }

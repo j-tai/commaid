@@ -21,7 +21,7 @@ impl Ord for Status {
 }
 
 impl Status {
-    pub fn encode(&self, previous: &Self) -> String {
+    pub fn diff(&self, previous: &Self) -> Option<String> {
         let mut message = String::new();
         if previous.clients != self.clients {
             write!(message, "n{}", self.clients).unwrap();
@@ -29,6 +29,6 @@ impl Status {
         if previous.text != self.text {
             write!(message, "${}", self.text).unwrap();
         }
-        message
+        (!message.is_empty()).then_some(message)
     }
 }
