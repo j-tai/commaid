@@ -2,6 +2,7 @@ mod daemon;
 mod handler;
 mod room;
 mod server;
+mod status;
 
 use std::net::SocketAddr;
 use std::path::Path;

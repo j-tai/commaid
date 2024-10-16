@@ -1,9 +1,15 @@
 <script lang="ts">
     import { page } from '$app/stores';
     import { generateRoom } from '$lib/room';
+    import { parseStatus } from '$lib/status';
+    import { onMount } from 'svelte';
     import { Socket, SocketState } from '../lib/websocket.svelte';
 
+    let clients = $state(1);
     let text = $state('');
+
+    let randomRoomName = $state('');
+    onMount(() => (randomRoomName = generateRoom()));
 
     let roomName = $derived($page.url.hash.replace(/^#/, ''));
     let socket = $state<Socket | null>(null);
@@ -11,13 +17,16 @@
 
     function connect() {
         if (roomName) {
-            socket = new Socket(
-                '/connect?' + new URLSearchParams({ room: roomName }),
-                (value) => (text = value),
-            );
+            socket = new Socket('/connect?' + new URLSearchParams({ room: roomName }), onReceive);
         } else {
             socket = null;
         }
+    }
+
+    function onReceive(data: string) {
+        const status = parseStatus(data);
+        clients = status.clients ?? clients;
+        text = status.text ?? text;
     }
 
     function onEdit() {
@@ -46,11 +55,18 @@
         class:state-error={socket?.state === SocketState.Error}
     >
         {#if socket === null}
-            You are not in a room. <a href="#{generateRoom()}">Create one?</a>
+            You are not in a room. <a href="#{randomRoomName}">Create one?</a>
         {:else if socket.state === SocketState.Connecting}
             Connecting...
         {:else if socket.state === SocketState.Open}
-            Connected. Share the URL to invite others to the room.
+            Connected.
+            {#if clients >= 3}
+                {clients - 1} other people in this room.
+            {:else if clients === 2}
+                1 other person in this room.
+            {:else}
+                Share the URL to invite others to the room.
+            {/if}
         {:else if socket.state === SocketState.Error}
             Connection error. <button onclick={() => socket?.reconnect()}>Reconnect?</button>
         {/if}

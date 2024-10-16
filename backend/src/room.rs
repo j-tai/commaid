@@ -5,6 +5,8 @@ use std::time::{Duration, Instant};
 use async_broadcast::{broadcast, InactiveReceiver, Receiver, Sender};
 use tokio::sync::Mutex;
 
+use crate::status::Status;
+
 #[derive(Default, Clone)]
 pub struct Rooms {
     inner: Arc<Mutex<HashMap<String, Arc<Mutex<Room>>>>>,
@@ -33,24 +35,6 @@ impl Rooms {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Status {
-    pub sequence: i16,
-    pub text: Arc<str>,
-}
-
-impl PartialOrd for Status {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for Status {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.sequence.wrapping_sub(other.sequence).cmp(&0)
-    }
-}
-
 pub struct Room {
     sender: Sender<Status>,
     receiver: InactiveReceiver<Status>,
@@ -75,8 +59,13 @@ impl Room {
     }
 
     pub async fn write(&mut self, text: impl Into<Arc<str>>) -> Status {
-        self.last_status.sequence = self.last_status.sequence.wrapping_add(1);
         self.last_status.text = text.into();
+        self.update().await
+    }
+
+    pub async fn update(&mut self) -> Status {
+        self.last_status.sequence = self.last_status.sequence.wrapping_add(1);
+        self.last_status.clients = u32::try_from(self.sender.receiver_count()).unwrap_or(u32::MAX);
         self.sender
             .broadcast_direct(self.last_status.clone())
             .await
@@ -85,8 +74,9 @@ impl Room {
         self.last_status.clone()
     }
 
-    pub fn subscribe(&self) -> (Receiver<Status>, Status) {
-        (self.receiver.activate_cloned(), self.last_status.clone())
+    pub async fn subscribe(&mut self) -> (Receiver<Status>, Status) {
+        let receiver = self.receiver.activate_cloned();
+        (receiver, self.update().await)
     }
 }
 

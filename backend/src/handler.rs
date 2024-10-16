@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::net::{IpAddr, SocketAddr};
+use std::sync::Arc;
 
 use async_broadcast::RecvError;
 use axum::extract::ws::{Message, WebSocket};
@@ -7,9 +8,11 @@ use axum::extract::{ConnectInfo, Query, State, WebSocketUpgrade};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde::Deserialize;
-use tracing::{debug, info, instrument, trace, warn};
+use tokio::sync::Mutex;
+use tracing::{debug, info, instrument, warn};
 
-use crate::room::Rooms;
+use crate::room::{Room, Rooms};
+use crate::status::Status;
 
 #[derive(Deserialize)]
 pub struct HandleParams {
@@ -34,39 +37,40 @@ pub async fn handle(
 #[instrument(skip_all, fields(ip = %ip, room = room_name))]
 async fn websocket(ip: IpAddr, socket: WebSocket, rooms: Rooms, room_name: String) {
     info!("Client connected.");
-    match try_websocket(socket, rooms, room_name).await {
+    let room = rooms.get(room_name).await;
+
+    match try_websocket(socket, &room).await {
         Ok(()) => info!("Client disconnected."),
         Err(error) => warn!(%error, "Client disconnected."),
     }
+
+    room.lock().await.update().await;
 }
 
 async fn try_websocket(
     mut socket: WebSocket,
-    rooms: Rooms,
-    room_name: String,
+    room: &Arc<Mutex<Room>>,
 ) -> Result<(), Box<dyn Error>> {
-    let room = rooms.get(room_name).await;
-    let (mut receiver, initial_status) = room.lock().await.subscribe();
+    let (mut receiver, initial_status) = room.lock().await.subscribe().await;
 
     // What the client currently sees
     let mut current = initial_status;
-    if !current.text.is_empty() {
-        socket.send(Message::Text(current.text.to_string())).await?;
-    }
+    socket
+        .send(Message::Text(current.encode(&Status::default())))
+        .await?;
 
     loop {
         tokio::select! {
-            // Receive update
-            new_status = receiver.recv_direct() => {
-                let new_status = match new_status {
-                    Ok(s) => s,
+            // Received update
+            result = receiver.recv_direct() => {
+                let new_status = match result {
+                    Ok(new_status) => new_status,
                     Err(RecvError::Overflowed(_)) => continue,
                     Err(e) => return Err(e.into()),
                 };
                 if new_status > current {
-                    trace!("Updating status, seq {} -> {}.", current.sequence, new_status.sequence);
+                    socket.send(Message::Text(new_status.encode(&current))).await?;
                     current = new_status;
-                    socket.send(Message::Text(current.text.to_string())).await?;
                 }
             }
             // User typed something
@@ -75,11 +79,11 @@ async fn try_websocket(
                     debug!("Client closed connection.");
                     return Ok(()); // client closed connection
                 };
-                if let Message::Text(text) = message? {
-                    let new_status = room.lock().await.write(text).await;
-                    assert!(new_status > current);
-                    current = new_status;
-                }
+                let Message::Text(text) = message? else {
+                    continue;
+                };
+                current = room.lock().await.write(text).await;
+                continue;
             }
         }
     }
