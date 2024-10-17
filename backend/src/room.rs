@@ -46,6 +46,7 @@ pub struct Room {
 impl Room {
     pub fn new() -> Room {
         let (mut sender, receiver) = broadcast(1);
+        sender.set_await_active(false);
         sender.set_overflow(true);
         Room {
             sender,
@@ -68,10 +69,8 @@ impl Room {
         self.last_status.sequence = self.last_status.sequence.wrapping_add(1);
         self.last_status.clients = u32::try_from(self.sender.receiver_count()).unwrap_or(u32::MAX);
         trace!("Broadcasting status seq {}.", self.last_status.sequence);
-        self.sender
-            .broadcast_direct(self.last_status.clone())
-            .await
-            .unwrap();
+        // ignore errors due to nobody listening
+        let _ = self.sender.broadcast_direct(self.last_status.clone()).await;
         trace!("Done broadcasting.");
         self.updated = Instant::now();
         self.last_status.clone()
@@ -80,6 +79,7 @@ impl Room {
     pub async fn subscribe(&mut self) -> (Receiver<Status>, Status) {
         trace!("Cloning receiver.");
         let receiver = self.receiver.activate_cloned();
+        assert!(!receiver.await_active());
         assert!(receiver.overflow());
         (receiver, self.update().await)
     }
