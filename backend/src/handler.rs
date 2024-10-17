@@ -10,7 +10,7 @@ use axum::http::StatusCode;
 use axum::response::IntoResponse;
 use serde::Deserialize;
 use tokio::sync::Mutex;
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, info, instrument, trace, warn};
 
 use crate::room::{Room, Rooms};
 use crate::status::Status;
@@ -61,40 +61,57 @@ async fn try_websocket(
     }
 
     loop {
+        trace!("Waiting for message.");
         let new_status = tokio::select! {
             // Received update
             result = receiver.recv_direct() => {
+                trace!("Received update from room.");
                 match result {
                     Ok(new_status) => new_status,
-                    Err(RecvError::Overflowed(_)) => continue,
+                    Err(RecvError::Overflowed(_)) => {
+                        trace!("Overflowed, ignoring.");
+                        continue;
+                    }
                     Err(e) => return Err(e.into()),
                 }
             }
             // User typed something
             message = socket.recv() => {
+                trace!("Received message from user.");
                 let Some(message) = message else {
                     debug!("Client closed connection.");
                     return Ok(()); // client closed connection
                 };
                 let Message::Text(text) = message? else {
+                    trace!("Ignoring non-text message.");
                     continue;
                 };
                 let text: Arc<str> = Arc::from(text);
                 current.text = text.clone();
+                trace!("Sending update to room.");
                 room.lock().await.write(text).await
             }
             // Send keepalive at least every 30 seconds
             _ = tokio::time::sleep(Duration::from_secs(30)) => {
+                trace!("Sending keepalive.");
                 socket.send(Message::Text(String::new())).await?;
                 continue;
             }
         };
 
         if new_status > current {
+            trace!(
+                "Updating status, seq {} -> {}.",
+                current.sequence,
+                new_status.sequence,
+            );
             if let Some(message) = new_status.diff(&current) {
+                trace!("Sending message to user.");
                 socket.send(Message::Text(message)).await?;
             }
             current = new_status;
+        } else {
+            trace!("Ignoring status update seq {}.", new_status.sequence);
         }
     }
 }
