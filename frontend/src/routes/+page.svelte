@@ -24,6 +24,7 @@
     }
 
     function onReceive(data: string) {
+        if (!data) return; // empty message is just a keepalive
         const status = parseStatus(data);
         clients = status.clients ?? clients;
         text = status.text ?? text;

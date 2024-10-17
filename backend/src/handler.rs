@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::net::{IpAddr, SocketAddr};
 use std::sync::Arc;
+use std::time::Duration;
 
 use async_broadcast::RecvError;
 use axum::extract::ws::{Message, WebSocket};
@@ -81,6 +82,11 @@ async fn try_websocket(
                 let text: Arc<str> = Arc::from(text);
                 current.text = text.clone();
                 room.lock().await.write(text).await
+            }
+            // Send keepalive at least every 30 seconds
+            _ = tokio::time::sleep(Duration::from_secs(30)) => {
+                socket.send(Message::Text(String::new())).await?;
+                continue;
             }
         };
 
