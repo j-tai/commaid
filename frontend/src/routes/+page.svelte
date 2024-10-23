@@ -1,10 +1,10 @@
 <script lang="ts">
     import { page } from '$app/stores';
+    import NotificationManager from '$lib/NotificationManager.svelte';
     import { generateRoom } from '$lib/room';
     import { parseStatus } from '$lib/status';
+    import { Socket, SocketState } from '$lib/websocket.svelte';
     import { onMount } from 'svelte';
-    import { Socket, SocketState } from '../lib/websocket.svelte';
-    import NotificationManager from '$lib/NotificationManager.svelte';
 
     let clients = $state(1);
     let text = $state('');
