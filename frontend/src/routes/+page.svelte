@@ -4,6 +4,7 @@
     import { parseStatus } from '$lib/status';
     import { onMount } from 'svelte';
     import { Socket, SocketState } from '../lib/websocket.svelte';
+    import NotificationManager from '$lib/NotificationManager.svelte';
 
     let clients = $state(1);
     let text = $state('');
@@ -13,6 +14,7 @@
 
     let roomName = $derived($page.url.hash.replace(/^#/, ''));
     let socket = $state<Socket | null>(null);
+    let notifications = $state<NotificationManager | null>(null);
     let disabled = $derived(socket?.state === SocketState.Connecting);
 
     function connect() {
@@ -26,6 +28,10 @@
     function onReceive(data: string) {
         if (!data) return; // empty message is just a keepalive
         const status = parseStatus(data);
+        if (status.text && status.text !== text) {
+            // Send notification if text changed
+            notifications?.notify();
+        }
         clients = status.clients ?? clients;
         text = status.text ?? text;
     }
@@ -47,6 +53,10 @@
 <svelte:head>
     <title>ComMaid</title>
 </svelte:head>
+
+{#if roomName}
+    <NotificationManager bind:this={notifications} />
+{/if}
 
 <div class="container">
     <p
