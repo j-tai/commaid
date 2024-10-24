@@ -3,10 +3,10 @@
     import QRCode from 'qrcode';
     import { page } from '$app/stores';
 
-    let imageUrl = $state('');
+    let imageUrl = $state(new Promise<string>(() => {}));
 
-    onMount(async () => {
-        imageUrl = await QRCode.toDataURL(window.location.href, {
+    $effect(() => {
+        imageUrl = QRCode.toDataURL($page.url.href, {
             scale: 1,
             margin: 2,
         });
@@ -16,11 +16,11 @@
 <div class="container">
     <h2>To see what I'm typing in real time, scan the QR code or enter the link.</h2>
     <div class="qr">
-        {#if imageUrl}
-            <img src={imageUrl} alt="QR code" />
-        {:else}
+        {#await imageUrl}
             <p>Generating QR code...</p>
-        {/if}
+        {:then imageUrl}
+            <img src={imageUrl} alt="QR code" />
+        {/await}
     </div>
     <p>{$page.url.href.replace(/^https?:\/\//, '')}</p>
 </div>
