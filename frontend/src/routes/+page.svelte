@@ -82,7 +82,11 @@
 <PanelContainer bind:panel back={Panel.Editor} class={statusBarClass}>
     {#snippet status()}
         <p>
-            {#if panel === Panel.Settings}
+            {#if panel === Panel.Welcome}
+                ComMaid
+            {:else if panel === Panel.Share}
+                Share Room
+            {:else if panel === Panel.Settings}
                 Settings
             {:else if socket === null}
                 You are not in a room. <button onclick={openRandomRoom}>Create one?</button>
@@ -126,7 +130,6 @@
         text-align: center;
         font-weight: bold;
 
-        a,
         button {
             text-decoration: underline;
         }
