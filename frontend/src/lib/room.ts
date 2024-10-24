@@ -9,5 +9,5 @@ export function generateRoom(): string {
     return result;
 }
 
-// Exclude vowels and '0' to avoid accidentally generating inappropriate words
-const ROOM_ALPHABET = 'bcdfghjklmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ123456789';
+// Exclude vowels, '0', and ambiguous letters
+const ROOM_ALPHABET = 'bcdfghjkmnpqrstvwxzBCDFGHJKLMNPQRSTVWXZ123456789';
