@@ -5,6 +5,7 @@
 </script>
 
 <div class="container">
+    <h2>Settings</h2>
     <label>
         <span>Font size</span>
         <input type="range" min={2} max={12} step={0.5} bind:value={settings.fontSize} />

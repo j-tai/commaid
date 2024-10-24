@@ -6,13 +6,14 @@
     import PanelContainer from '$lib/panel/PanelContainer.svelte';
     import PanelTab from '$lib/panel/PanelTab.svelte';
     import SettingsPanel from '$lib/panel/SettingsPanel.svelte';
+    import WelcomePanel from '$lib/panel/WelcomePanel.svelte';
     import { generateRoom } from '$lib/room';
     import { Settings } from '$lib/settings.svelte';
     import { parseStatus } from '$lib/status';
     import { Socket, SocketState } from '$lib/websocket.svelte';
     import { onMount } from 'svelte';
 
-    let panel = $state<Panel>(Panel.Editor);
+    let panel = $state<Panel>(Panel.Welcome);
 
     let clients = $state(1);
     let text = $state('');
@@ -31,6 +32,7 @@
     function connect() {
         if (roomName) {
             socket = new Socket('/connect?' + new URLSearchParams({ room: roomName }), onReceive);
+            panel = Panel.Editor;
         } else {
             socket = null;
         }
@@ -94,11 +96,14 @@
     {/snippet}
 
     {#snippet tabs()}
+        <PanelTab bind:panel value={Panel.Welcome} icon="fi-ss-star" name="Home" />
         <PanelTab bind:panel value={Panel.Editor} icon="fi-ss-comment" name="Communicate" />
         <PanelTab bind:panel value={Panel.Settings} icon="fi-ss-settings" name="Settings" />
     {/snippet}
 
-    {#if panel === Panel.Editor}
+    {#if panel === Panel.Welcome}
+        <WelcomePanel />
+    {:else if panel === Panel.Editor}
         <EditorPanel bind:text {settings} socketState={socket?.state} {onEdit} />
     {:else if panel === Panel.Settings}
         <SettingsPanel bind:settings />

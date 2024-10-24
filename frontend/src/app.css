@@ -43,6 +43,24 @@ body {
     font-family: 'Rubik Variable', sans-serif;
 }
 
+h2 {
+    font-size: 300%;
+}
+
+h3 {
+    font-size: 200%;
+}
+
+h2,
+h3 {
+    font-weight: 300;
+    margin-bottom: 0.5em;
+
+    &:not(:first-child) {
+        margin-top: 1em;
+    }
+}
+
 button {
     cursor: pointer;
 }
