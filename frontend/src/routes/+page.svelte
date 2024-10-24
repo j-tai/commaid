@@ -6,6 +6,7 @@
     import PanelContainer from '$lib/panel/PanelContainer.svelte';
     import PanelTab from '$lib/panel/PanelTab.svelte';
     import SettingsPanel from '$lib/panel/SettingsPanel.svelte';
+    import SharePanel from '$lib/panel/SharePanel.svelte';
     import WelcomePanel from '$lib/panel/WelcomePanel.svelte';
     import { generateRoom } from '$lib/room';
     import { Settings } from '$lib/settings.svelte';
@@ -19,8 +20,9 @@
     let text = $state('');
     let settings = $state(new Settings());
 
-    let randomRoomName = $state('');
-    onMount(() => (randomRoomName = generateRoom()));
+    function openRandomRoom() {
+        window.location.hash = generateRoom();
+    }
 
     let roomName = $derived($page.url.hash.replace(/^#/, ''));
     let socket = $state<Socket | null>(null);
@@ -29,10 +31,16 @@
     // Derived things
     let statusBarClass = $derived('state-' + (socket?.state?.toLowerCase() ?? 'none'));
 
+    $effect(() => {
+        if (panel === Panel.Share && !roomName) openRandomRoom();
+    });
+    onMount(() => {
+        if (roomName) panel = Panel.Editor;
+    });
+
     function connect() {
         if (roomName) {
             socket = new Socket('/connect?' + new URLSearchParams({ room: roomName }), onReceive);
-            panel = Panel.Editor;
         } else {
             socket = null;
         }
@@ -77,7 +85,7 @@
             {#if panel === Panel.Settings}
                 Settings
             {:else if socket === null}
-                You are not in a room. <a href="#{randomRoomName}">Create one?</a>
+                You are not in a room. <button onclick={openRandomRoom}>Create one?</button>
             {:else if socket.state === SocketState.Connecting}
                 Connecting...
             {:else if socket.state === SocketState.Open}
@@ -98,6 +106,7 @@
     {#snippet tabs()}
         <PanelTab bind:panel value={Panel.Welcome} icon="fi-ss-star" name="Home" />
         <PanelTab bind:panel value={Panel.Editor} icon="fi-ss-comment" name="Communicate" />
+        <PanelTab bind:panel value={Panel.Share} icon="fi-ss-share" name="Share" />
         <PanelTab bind:panel value={Panel.Settings} icon="fi-ss-settings" name="Settings" />
     {/snippet}
 
@@ -105,6 +114,8 @@
         <WelcomePanel />
     {:else if panel === Panel.Editor}
         <EditorPanel bind:text {settings} socketState={socket?.state} {onEdit} />
+    {:else if panel === Panel.Share}
+        <SharePanel />
     {:else if panel === Panel.Settings}
         <SettingsPanel bind:settings />
     {/if}
