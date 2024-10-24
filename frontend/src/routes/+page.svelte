@@ -1,21 +1,32 @@
 <script lang="ts">
     import { page } from '$app/stores';
     import NotificationManager from '$lib/NotificationManager.svelte';
+    import EditorPanel from '$lib/panel/EditorPanel.svelte';
+    import { Panel } from '$lib/panel/panel';
+    import PanelContainer from '$lib/panel/PanelContainer.svelte';
+    import PanelTab from '$lib/panel/PanelTab.svelte';
+    import SettingsPanel from '$lib/panel/SettingsPanel.svelte';
     import { generateRoom } from '$lib/room';
+    import { Settings } from '$lib/settings.svelte';
     import { parseStatus } from '$lib/status';
     import { Socket, SocketState } from '$lib/websocket.svelte';
     import { onMount } from 'svelte';
 
+    let panel = $state<Panel>(Panel.Editor);
+
     let clients = $state(1);
     let text = $state('');
+    let settings = $state(new Settings());
 
     let randomRoomName = $state('');
     onMount(() => (randomRoomName = generateRoom()));
 
     let roomName = $derived($page.url.hash.replace(/^#/, ''));
     let socket = $state<Socket | null>(null);
-    let notifications = $state<NotificationManager | null>(null);
-    let disabled = $derived(socket?.state === SocketState.Connecting);
+    let notifications = $state<NotificationManager>();
+
+    // Derived things
+    let statusBarClass = $derived('state-' + (socket?.state?.toLowerCase() ?? 'none'));
 
     function connect() {
         if (roomName) {
@@ -58,37 +69,50 @@
     <NotificationManager bind:this={notifications} />
 {/if}
 
-<div class="container">
-    <p
-        class:state-none={socket === null}
-        class:state-connecting={socket?.state === SocketState.Connecting}
-        class:state-open={socket?.state === SocketState.Open}
-        class:state-error={socket?.state === SocketState.Error}
-    >
-        {#if socket === null}
-            You are not in a room. <a href="#{randomRoomName}">Create one?</a>
-        {:else if socket.state === SocketState.Connecting}
-            Connecting...
-        {:else if socket.state === SocketState.Open}
-            Connected.
-            {#if clients >= 3}
-                {clients - 1} other people in this room.
-            {:else if clients === 2}
-                1 other person in this room.
-            {:else}
-                Share the URL to invite others to the room.
+<PanelContainer bind:panel back={Panel.Editor} class={statusBarClass}>
+    {#snippet status()}
+        <p>
+            {#if panel === Panel.Settings}
+                Settings
+            {:else if socket === null}
+                You are not in a room. <a href="#{randomRoomName}">Create one?</a>
+            {:else if socket.state === SocketState.Connecting}
+                Connecting...
+            {:else if socket.state === SocketState.Open}
+                Connected.
+                {#if clients >= 3}
+                    {clients - 1} other people in this room.
+                {:else if clients === 2}
+                    1 other person in this room.
+                {:else}
+                    Share the URL to invite others to the room.
+                {/if}
+            {:else if socket.state === SocketState.Error}
+                Connection error. <button onclick={() => socket?.reconnect()}>Reconnect?</button>
             {/if}
-        {:else if socket.state === SocketState.Error}
-            Connection error. <button onclick={() => socket?.reconnect()}>Reconnect?</button>
-        {/if}
-    </p>
-    <!-- svelte-ignore a11y_autofocus -->
-    <textarea
-        spellcheck="false"
-        placeholder={disabled ? '' : 'Start typing here...'}
-        autofocus
-        bind:value={text}
-        {disabled}
-        oninput={onEdit}
-    ></textarea>
-</div>
+        </p>
+    {/snippet}
+
+    {#snippet tabs()}
+        <PanelTab bind:panel value={Panel.Editor} icon="fi-ss-comment" name="Communicate" />
+        <PanelTab bind:panel value={Panel.Settings} icon="fi-ss-settings" name="Settings" />
+    {/snippet}
+
+    {#if panel === Panel.Editor}
+        <EditorPanel bind:text {settings} socketState={socket?.state} {onEdit} />
+    {:else if panel === Panel.Settings}
+        <SettingsPanel bind:settings />
+    {/if}
+</PanelContainer>
+
+<style lang="postcss">
+    p {
+        text-align: center;
+        font-weight: bold;
+
+        a,
+        button {
+            text-decoration: underline;
+        }
+    }
+</style>

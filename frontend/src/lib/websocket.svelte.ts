@@ -41,7 +41,7 @@ export class Socket {
 }
 
 export enum SocketState {
-    Connecting,
-    Open,
-    Error,
+    Connecting = 'Connecting',
+    Open = 'Open',
+    Error = 'Error',
 }

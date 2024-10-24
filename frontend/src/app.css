@@ -1,3 +1,5 @@
+@import '@flaticon/flaticon-uicons/css/solid/straight';
+
 /* crude css reset */
 *,
 a:visited {
@@ -41,46 +43,35 @@ body {
     font-family: 'Rubik Variable', sans-serif;
 }
 
-.container {
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.container p {
-    flex: none;
-    padding: 0.3em;
-    text-align: center;
-    font-weight: bold;
-}
-
-a,
 button {
-    text-decoration: underline;
+    cursor: pointer;
 }
 
-.state-none {
-    background: var(--bg-info);
+.fi {
+    display: block;
+    line-height: 0;
 }
 
-.state-connecting {
-    background: var(--bg-warning);
+.bar {
+    .state-none > & {
+        background: var(--bg-info);
+    }
+
+    .state-connecting > & {
+        background: var(--bg-warning);
+    }
+
+    .state-open > & {
+        background: var(--bg-success);
+    }
+
+    .state-error > & {
+        background: var(--bg-error);
+    }
 }
 
-.state-open {
-    background: var(--bg-success);
-}
-
-.state-error {
-    background: var(--bg-error);
-}
-
-textarea {
-    flex: 1 1;
-    resize: none;
-    padding: 0.3em;
-    background: unset;
-    color: unset;
-    font-size: 8svmin;
+.container {
+    margin: 0 auto;
+    padding: 2em 1em;
+    max-width: 800px;
 }

@@ -252,6 +252,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@flaticon/flaticon-uicons@npm:^3.3.1":
+  version: 3.3.1
+  resolution: "@flaticon/flaticon-uicons@npm:3.3.1"
+  dependencies:
+    esbuild-linux-64: "npm:^0.14.5"
+  dependenciesMeta:
+    esbuild-linux-64:
+      optional: true
+  checksum: 10c0/428211b5ada6088d4149a87006c4e2d81d19aa74474796d555b07f14b332d52693e9d6520f9b62539758865685c10f0fd404e3ec0b0ce77d7bf9530581a0b645
+  languageName: node
+  linkType: hard
+
 "@fontsource-variable/rubik@npm:^5.1.0":
   version: 5.1.0
   resolution: "@fontsource-variable/rubik@npm:5.1.0"
@@ -350,6 +362,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@jtai/commaid@workspace:."
   dependencies:
+    "@flaticon/flaticon-uicons": "npm:^3.3.1"
     "@fontsource-variable/rubik": "npm:^5.1.0"
     "@sveltejs/adapter-static": "npm:^3.0.5"
     "@sveltejs/kit": "npm:^2.0.0"
@@ -1091,6 +1104,13 @@ __metadata:
   version: 2.0.3
   resolution: "err-code@npm:2.0.3"
   checksum: 10c0/b642f7b4dd4a376e954947550a3065a9ece6733ab8e51ad80db727aaae0817c2e99b02a97a3d6cecc648a97848305e728289cf312d09af395403a90c9d4d8a66
+  languageName: node
+  linkType: hard
+
+"esbuild-linux-64@npm:^0.14.5":
+  version: 0.14.54
+  resolution: "esbuild-linux-64@npm:0.14.54"
+  conditions: os=linux & cpu=x64
   languageName: node
   linkType: hard
 
