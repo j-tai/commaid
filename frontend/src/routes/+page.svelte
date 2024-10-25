@@ -14,29 +14,43 @@
     import { Socket, SocketState } from '$lib/websocket.svelte';
     import { onMount } from 'svelte';
 
-    let panel = $state<Panel>(Panel.Welcome);
-
+    // Model state
     let clients = $state(1);
     let text = $state('');
     let settings = $state(new Settings());
-
-    function openRandomRoom() {
-        window.location.hash = generateRoom();
-    }
 
     let roomName = $derived($page.url.hash.replace(/^#/, ''));
     let socket = $state<Socket | null>(null);
     let notifications = $state<NotificationManager>();
 
-    // Derived things
+    // View state
+    let panel = $state(Panel.Welcome);
+    let defaultPanel = $derived(roomName ? Panel.Editor : Panel.Welcome);
     let statusBarClass = $derived('state-' + (socket?.state?.toLowerCase() ?? 'none'));
 
-    $effect(() => {
-        if (panel === Panel.Share && !roomName) openRandomRoom();
-    });
     onMount(() => {
-        if (roomName) panel = Panel.Editor;
+        panel = defaultPanel;
     });
+
+    // Opening the share panel will automatically enter a room
+    $effect(() => {
+        if (panel === Panel.Share && !roomName) {
+            window.location.hash = generateRoom();
+        }
+    });
+
+    // Connect when the room name changes
+    $effect(() => connect());
+
+    function openOffline() {
+        window.location.hash = '';
+        panel = Panel.Editor;
+    }
+
+    function openRandomRoom() {
+        window.location.hash = generateRoom();
+        panel = Panel.Editor;
+    }
 
     function connect() {
         if (roomName) {
@@ -64,11 +78,6 @@
             socket.send(text);
         }
     }
-
-    $effect(() => {
-        // Connect when the room name changes
-        connect();
-    });
 </script>
 
 <svelte:head>
@@ -79,16 +88,10 @@
     <NotificationManager bind:this={notifications} />
 {/if}
 
-<PanelContainer bind:panel back={Panel.Editor} class={statusBarClass}>
+<PanelContainer bind:panel back={defaultPanel} class={statusBarClass}>
     {#snippet status()}
         <p>
-            {#if panel === Panel.Welcome}
-                ComMaid
-            {:else if panel === Panel.Share}
-                Share Room
-            {:else if panel === Panel.Settings}
-                Settings
-            {:else if socket === null}
+            {#if socket === null}
                 You are not in a room. <button onclick={openRandomRoom}>Create one?</button>
             {:else if socket.state === SocketState.Connecting}
                 Connecting...
@@ -99,7 +102,7 @@
                 {:else if clients === 2}
                     1 other person in this room.
                 {:else}
-                    Share the URL to invite others to the room.
+                    <button onclick={() => (panel = Panel.Share)}>Invite people?</button>
                 {/if}
             {:else if socket.state === SocketState.Error}
                 Connection error. <button onclick={() => socket?.reconnect()}>Reconnect?</button>
@@ -115,7 +118,7 @@
     {/snippet}
 
     {#if panel === Panel.Welcome}
-        <WelcomePanel />
+        <WelcomePanel onOpenOffline={openOffline} onOpenRoom={openRandomRoom} />
     {:else if panel === Panel.Editor}
         <EditorPanel bind:text {settings} socketState={socket?.state} {onEdit} />
     {:else if panel === Panel.Share}

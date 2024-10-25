@@ -1,3 +1,13 @@
+<script lang="ts">
+    let {
+        onOpenOffline,
+        onOpenRoom,
+    }: {
+        onOpenOffline: () => void;
+        onOpenRoom: () => void;
+    } = $props();
+</script>
+
 <div class="container">
     <h2>Welcome to ComMaid</h2>
 
@@ -14,11 +24,30 @@
         The name "ComMaid" sounds similar to "comm aid", i.e., communication aid. You can also think
         of it as a "maid" who helps you communicate.
     </p>
+
+    <button class="btn" onclick={onOpenOffline}>
+        <span>Use ComMaid offline</span>
+        <i class="fi fi-ss-angle-right"></i>
+    </button>
+    <button class="btn" onclick={onOpenRoom}>
+        <span>Create a room</span>
+        <i class="fi fi-ss-angle-right"></i>
+    </button>
 </div>
 
-<style>
+<style lang="postcss">
     p {
         margin: 0.5em 0;
+    }
+
+    button {
+        margin-top: 0.5em;
+        width: 100%;
+        font-size: 200%;
+        font-weight: 300;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     b {
