@@ -70,14 +70,17 @@ button {
     cursor: pointer;
 }
 
-.btn {
+.card {
+    width: 100%;
     padding: 0.5em 0.8em;
     border-radius: 0.5em;
     background: var(--bg-1);
-    transition: background 0.1s ease-in-out;
 
-    &:hover {
-        background: var(--bg-2);
+    &.hover {
+        transition: background 0.1s ease-in-out;
+        &:hover {
+            background: var(--bg-2);
+        }
     }
 }
 

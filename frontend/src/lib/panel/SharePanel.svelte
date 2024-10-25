@@ -1,7 +1,6 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import QRCode from 'qrcode';
     import { page } from '$app/stores';
+    import QRCode from 'qrcode';
 
     let imageUrl = $state(new Promise<string>(() => {}));
 
@@ -10,6 +9,16 @@
             scale: 1,
             margin: 2,
         });
+    });
+
+    let pageUrl = $derived.by(() => {
+        const url = $page.url.href.replace(/^https?:\/\//, '');
+        const slash = url.indexOf('/');
+        if (slash < 0) {
+            return [url, ''];
+        } else {
+            return [url.substring(0, slash), url.substring(slash)];
+        }
     });
 </script>
 
@@ -22,7 +31,10 @@
             <img src={imageUrl} alt="QR code" />
         {/await}
     </div>
-    <p>{$page.url.href.replace(/^https?:\/\//, '')}</p>
+    <!-- Allow a line break before the first slash -->
+    <p>
+        <span>{pageUrl[0]}</span><wbr /><span>{pageUrl[1]}</span>
+    </p>
 </div>
 
 <style lang="postcss">
@@ -37,7 +49,7 @@
             height: 100%;
         }
 
-        img {
+        > img {
             image-rendering: pixelated;
         }
     }
@@ -51,5 +63,9 @@
         margin-top: 0.3em;
         font-weight: 300;
         font-size: 250%;
+
+        > span {
+            white-space: nowrap;
+        }
     }
 </style>

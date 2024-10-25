@@ -25,11 +25,11 @@
         of it as a "maid" who helps you communicate.
     </p>
 
-    <button class="btn" onclick={onOpenOffline}>
+    <button class="card hover" onclick={onOpenOffline}>
         <span>Use ComMaid offline</span>
         <i class="fi fi-ss-angle-right"></i>
     </button>
-    <button class="btn" onclick={onOpenRoom}>
+    <button class="card hover" onclick={onOpenRoom}>
         <span>Create a room</span>
         <i class="fi fi-ss-angle-right"></i>
     </button>

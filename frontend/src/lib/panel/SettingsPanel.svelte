@@ -16,7 +16,9 @@
         <input type="range" min={5} max={100} step={5} bind:value={settings.opacity} />
         <span>{settings.opacity}%</span>
     </label>
-    <p style={settings.css()}>Text looks like this</p>
+    <div class="card">
+        <p style={settings.css()}>Text looks like this</p>
+    </div>
 </div>
 
 <style>
@@ -29,7 +31,13 @@
         gap: 1em;
     }
 
-    p {
-        padding: 1rem 1.5rem;
+    .card {
+        font-size: 4svmin; /* for card padding */
+        height: 13svmin;
+        overflow: hidden;
+
+        > p {
+            text-wrap: nowrap;
+        }
     }
 </style>
