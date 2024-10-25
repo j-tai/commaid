@@ -28,7 +28,7 @@ pub async fn handle(
 ) -> Result<impl IntoResponse, StatusCode> {
     let room_name = form.0.room;
     // Validate room name
-    if !matches!(room_name.len(), 6..=16) || !room_name.chars().all(|c| c.is_ascii_alphanumeric()) {
+    if room_name.len() != 6 || !room_name.chars().all(|c| c.is_ascii_alphanumeric()) {
         return Err(StatusCode::BAD_REQUEST);
     }
 

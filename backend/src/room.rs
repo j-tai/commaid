@@ -4,7 +4,7 @@ use std::time::{Duration, Instant};
 
 use async_broadcast::{broadcast, InactiveReceiver, Receiver, Sender};
 use tokio::sync::Mutex;
-use tracing::trace;
+use tracing::{debug, trace};
 
 use crate::status::Status;
 
@@ -61,7 +61,20 @@ impl Room {
     }
 
     pub async fn write(&mut self, text: impl Into<Arc<str>>) -> Status {
-        self.last_status.text = text.into();
+        let mut text: Arc<str> = text.into();
+        if text.len() > TEXT_MAX_LEN {
+            debug!("Text too long ({} bytes), truncating.", text.len());
+            // Try to trim the text at various indices
+            for index in (0..=TEXT_MAX_LEN).rev() {
+                if let Some(substr) = text.get(..index) {
+                    text = Arc::from(substr);
+                    break;
+                }
+            }
+            assert!(text.len() <= TEXT_MAX_LEN);
+        }
+
+        self.last_status.text = text;
         self.update().await
     }
 
@@ -85,4 +98,5 @@ impl Room {
     }
 }
 
-const ROOM_DURATION: Duration = Duration::from_secs(60 * 60); // 10 minutes
+const ROOM_DURATION: Duration = Duration::from_secs(10 * 60); // 10 minutes
+const TEXT_MAX_LEN: usize = 8_000; // 8 kB

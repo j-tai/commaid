@@ -20,4 +20,4 @@ pub async fn cleanup(rooms: Rooms) -> ! {
     }
 }
 
-const CLEANUP_DELAY: Duration = Duration::from_secs(30 * 60);
+const CLEANUP_DELAY: Duration = Duration::from_secs(5 * 60);
