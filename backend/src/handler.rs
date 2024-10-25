@@ -8,11 +8,12 @@ use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{ConnectInfo, Query, State, WebSocketUpgrade};
 use axum::http::StatusCode;
 use axum::response::IntoResponse;
+use axum::Json;
 use serde::Deserialize;
 use tokio::sync::Mutex;
 use tracing::{debug, info, instrument, trace, warn};
 
-use crate::room::{Room, Rooms};
+use crate::room::{Room, Rooms, Stats};
 use crate::status::Status;
 
 #[derive(Deserialize)]
@@ -114,4 +115,8 @@ async fn try_websocket(
             trace!("Ignoring status update seq {}.", new_status.sequence);
         }
     }
+}
+
+pub async fn stats(rooms: State<Rooms>) -> Json<Stats> {
+    Json(rooms.stats().await)
 }

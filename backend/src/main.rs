@@ -49,6 +49,7 @@ async fn main() {
     let app = Router::new()
         .route("/", get_service(ServeFile::new(&index_path)))
         .route("/connect", get(handler::handle))
+        .route("/stats", get(handler::stats))
         .nest_service("/_app", ServeDir::new(app_path))
         .with_state(rooms);
 
