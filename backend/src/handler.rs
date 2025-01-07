@@ -58,7 +58,7 @@ async fn try_websocket(
     // What the client currently sees
     let mut current = initial_status;
     if let Some(message) = current.diff(&Status::default()) {
-        socket.send(Message::Text(message)).await?;
+        socket.send(message.into()).await?;
     }
 
     loop {
@@ -87,7 +87,7 @@ async fn try_websocket(
                     trace!("Ignoring non-text message.");
                     continue;
                 };
-                let text: Arc<str> = Arc::from(text);
+                let text: Arc<str> = Arc::from(text.as_str());
                 current.text = text.clone();
                 trace!("Sending update to room.");
                 room.lock().await.write(text).await
@@ -95,7 +95,7 @@ async fn try_websocket(
             // Send keepalive at least every 30 seconds
             _ = tokio::time::sleep(Duration::from_secs(30)) => {
                 trace!("Sending keepalive.");
-                socket.send(Message::Text(String::new())).await?;
+                socket.send("".into()).await?;
                 continue;
             }
         };
@@ -108,7 +108,7 @@ async fn try_websocket(
             );
             if let Some(message) = new_status.diff(&current) {
                 trace!("Sending message to user.");
-                socket.send(Message::Text(message)).await?;
+                socket.send(message.into()).await?;
             }
             current = new_status;
         } else {
