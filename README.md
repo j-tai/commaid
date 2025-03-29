@@ -1,6 +1,6 @@
 # ComMaid
 
-## Try it out! https://commaid.jtai.ca
+## Try it out! https://commaid.jtai.dev
 
 **ComMaid** is a communication aid for people who are unable or unwilling to speak. It is useful for both Deaf and non-Deaf people, such as people with situational mutism, or anyone who prefers typing over talking.
 
